@@ -8,7 +8,8 @@ export default async function Home() {
     .from("truck_parts")
     .select("*")
     .eq("active", true)
-    .order("part_num", { ascending: true });
+    .order("part_num", { ascending: true })
+    .range(0, 9999);
 
   if (error) {
     return (
