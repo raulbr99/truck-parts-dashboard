@@ -7,11 +7,12 @@ interface PartsTableProps {
   parts: TruckPart[];
 }
 
-const ITEMS_PER_PAGE = 50;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export function PartsTable({ parts }: PartsTableProps) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [sortField, setSortField] = useState<keyof TruckPart>("part_num");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -91,10 +92,10 @@ export function PartsTable({ parts }: PartsTableProps) {
     });
   }, [filteredParts, sortField, sortDirection]);
 
-  const totalPages = Math.ceil(sortedParts.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedParts.length / pageSize);
   const paginatedParts = sortedParts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
 
   const handleSort = (field: keyof TruckPart) => {
@@ -328,43 +329,60 @@ export function PartsTable({ parts }: PartsTableProps) {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-4 flex-wrap gap-4">
+        <div className="flex items-center gap-4">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Page {currentPage} of {totalPages}
+            Page {currentPage} of {totalPages || 1}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 dark:text-gray-400">Rows:</label>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             >
-              First
-            </button>
-            <button
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
-            >
-              Next
-            </button>
-            <button
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
-            >
-              Last
-            </button>
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      )}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
+          >
+            First
+          </button>
+          <button
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
+          >
+            Next
+          </button>
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
+          >
+            Last
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
