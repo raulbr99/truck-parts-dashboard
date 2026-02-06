@@ -17,25 +17,21 @@ export function PartsTable({ parts }: PartsTableProps) {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Filters
-  const [makeFilter, setMakeFilter] = useState<string>("");
   const [modelFilter, setModelFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [stockedFilter, setStockedFilter] = useState<string>("");
 
   // Extract unique values for filters
   const filterOptions = useMemo(() => {
-    const makes = new Set<string>();
     const models = new Set<string>();
     const categories = new Set<string>();
 
     parts.forEach((part) => {
-      if (part.make) makes.add(part.make);
       if (part.model) models.add(part.model);
       if (part.category_name) categories.add(part.category_name);
     });
 
     return {
-      makes: Array.from(makes).sort(),
       models: Array.from(models).sort(),
       categories: Array.from(categories).sort(),
     };
@@ -49,14 +45,10 @@ export function PartsTable({ parts }: PartsTableProps) {
         const matchesSearch =
           part.part_num?.toLowerCase().includes(searchLower) ||
           part.description?.toLowerCase().includes(searchLower) ||
-          part.make?.toLowerCase().includes(searchLower) ||
           part.model?.toLowerCase().includes(searchLower) ||
           part.category_name?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }
-
-      // Make filter
-      if (makeFilter && part.make !== makeFilter) return false;
 
       // Model filter
       if (modelFilter && part.model !== modelFilter) return false;
@@ -70,7 +62,7 @@ export function PartsTable({ parts }: PartsTableProps) {
 
       return true;
     });
-  }, [parts, search, makeFilter, modelFilter, categoryFilter, stockedFilter]);
+  }, [parts, search, modelFilter, categoryFilter, stockedFilter]);
 
   const sortedParts = useMemo(() => {
     return [...filteredParts].sort((a, b) => {
@@ -110,14 +102,13 @@ export function PartsTable({ parts }: PartsTableProps) {
 
   const clearFilters = () => {
     setSearch("");
-    setMakeFilter("");
     setModelFilter("");
     setCategoryFilter("");
     setStockedFilter("");
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = search || makeFilter || modelFilter || categoryFilter || stockedFilter;
+  const hasActiveFilters = search || modelFilter || categoryFilter || stockedFilter;
 
   const formatPrice = (price: number | null) => {
     if (price === null) return "-";
@@ -140,7 +131,7 @@ export function PartsTable({ parts }: PartsTableProps) {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search by part number, description, make, model, or category..."
+          placeholder="Search by part number, description, model, or category..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -152,22 +143,6 @@ export function PartsTable({ parts }: PartsTableProps) {
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap gap-3 items-center">
-        <select
-          value={makeFilter}
-          onChange={(e) => {
-            setMakeFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-          className={selectClassName}
-        >
-          <option value="">All Makes</option>
-          {filterOptions.makes.map((make) => (
-            <option key={make} value={make}>
-              {make}
-            </option>
-          ))}
-        </select>
-
         <select
           value={modelFilter}
           onChange={(e) => {
@@ -247,12 +222,6 @@ export function PartsTable({ parts }: PartsTableProps) {
                 Description <SortIcon field="description" />
               </th>
               <th
-                onClick={() => handleSort("make")}
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                Make <SortIcon field="make" />
-              </th>
-              <th
                 onClick={() => handleSort("model")}
                 className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
@@ -269,12 +238,6 @@ export function PartsTable({ parts }: PartsTableProps) {
                 className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 Price <SortIcon field="price" />
-              </th>
-              <th
-                onClick={() => handleSort("qty_available")}
-                className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                Qty <SortIcon field="qty_available" />
               </th>
               <th
                 onClick={() => handleSort("stocked")}
@@ -297,9 +260,6 @@ export function PartsTable({ parts }: PartsTableProps) {
                   {part.description || "-"}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {part.make || "-"}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {part.model || "-"}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
@@ -307,9 +267,6 @@ export function PartsTable({ parts }: PartsTableProps) {
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right whitespace-nowrap">
                   {formatPrice(part.price)}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-right whitespace-nowrap">
-                  {part.qty_available ?? "-"}
                 </td>
                 <td className="px-4 py-3 text-center">
                   {part.stocked ? (
