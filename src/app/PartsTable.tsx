@@ -15,19 +15,61 @@ export function PartsTable({ parts }: PartsTableProps) {
   const [sortField, setSortField] = useState<keyof TruckPart>("part_num");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const filteredParts = useMemo(() => {
-    if (!search.trim()) return parts;
+  // Filters
+  const [makeFilter, setMakeFilter] = useState<string>("");
+  const [modelFilter, setModelFilter] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [stockedFilter, setStockedFilter] = useState<string>("");
 
-    const searchLower = search.toLowerCase();
-    return parts.filter(
-      (part) =>
-        part.part_num?.toLowerCase().includes(searchLower) ||
-        part.description?.toLowerCase().includes(searchLower) ||
-        part.make?.toLowerCase().includes(searchLower) ||
-        part.model?.toLowerCase().includes(searchLower) ||
-        part.category_name?.toLowerCase().includes(searchLower)
-    );
-  }, [parts, search]);
+  // Extract unique values for filters
+  const filterOptions = useMemo(() => {
+    const makes = new Set<string>();
+    const models = new Set<string>();
+    const categories = new Set<string>();
+
+    parts.forEach((part) => {
+      if (part.make) makes.add(part.make);
+      if (part.model) models.add(part.model);
+      if (part.category_name) categories.add(part.category_name);
+    });
+
+    return {
+      makes: Array.from(makes).sort(),
+      models: Array.from(models).sort(),
+      categories: Array.from(categories).sort(),
+    };
+  }, [parts]);
+
+  const filteredParts = useMemo(() => {
+    return parts.filter((part) => {
+      // Search filter
+      if (search.trim()) {
+        const searchLower = search.toLowerCase();
+        const matchesSearch =
+          part.part_num?.toLowerCase().includes(searchLower) ||
+          part.description?.toLowerCase().includes(searchLower) ||
+          part.make?.toLowerCase().includes(searchLower) ||
+          part.model?.toLowerCase().includes(searchLower) ||
+          part.category_name?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Make filter
+      if (makeFilter && part.make !== makeFilter) return false;
+
+      // Model filter
+      if (modelFilter && part.model !== modelFilter) return false;
+
+      // Category filter
+      if (categoryFilter && part.category_name !== categoryFilter) return false;
+
+      // Stocked filter
+      if (stockedFilter === "yes" && !part.stocked) return false;
+      if (stockedFilter === "no" && part.stocked) return false;
+
+      return true;
+    });
+  }, [parts, search, makeFilter, modelFilter, categoryFilter, stockedFilter]);
 
   const sortedParts = useMemo(() => {
     return [...filteredParts].sort((a, b) => {
@@ -65,6 +107,17 @@ export function PartsTable({ parts }: PartsTableProps) {
     setCurrentPage(1);
   };
 
+  const clearFilters = () => {
+    setSearch("");
+    setMakeFilter("");
+    setModelFilter("");
+    setCategoryFilter("");
+    setStockedFilter("");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = search || makeFilter || modelFilter || categoryFilter || stockedFilter;
+
   const formatPrice = (price: number | null) => {
     if (price === null) return "-";
     return new Intl.NumberFormat("en-US", {
@@ -78,6 +131,8 @@ export function PartsTable({ parts }: PartsTableProps) {
     return <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>;
   };
 
+  const selectClassName = "px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm";
+
   return (
     <div>
       {/* Search */}
@@ -90,14 +145,87 @@ export function PartsTable({ parts }: PartsTableProps) {
             setSearch(e.target.value);
             setCurrentPage(1);
           }}
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          className="w-full max-w-xl px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
         />
+      </div>
+
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap gap-3 items-center">
+        <select
+          value={makeFilter}
+          onChange={(e) => {
+            setMakeFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className={selectClassName}
+        >
+          <option value="">All Makes</option>
+          {filterOptions.makes.map((make) => (
+            <option key={make} value={make}>
+              {make}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={modelFilter}
+          onChange={(e) => {
+            setModelFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className={selectClassName}
+        >
+          <option value="">All Models</option>
+          {filterOptions.models.map((model) => (
+            <option key={model} value={model}>
+              {model}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={categoryFilter}
+          onChange={(e) => {
+            setCategoryFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className={selectClassName}
+        >
+          <option value="">All Categories</option>
+          {filterOptions.categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={stockedFilter}
+          onChange={(e) => {
+            setStockedFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className={selectClassName}
+        >
+          <option value="">All Stock Status</option>
+          <option value="yes">In Stock</option>
+          <option value="no">Out of Stock</option>
+        </select>
+
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="px-3 py-2 text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 underline"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {/* Results count */}
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         Showing {paginatedParts.length} of {sortedParts.length} results
-        {search && ` for "${search}"`}
+        {hasActiveFilters && " (filtered)"}
       </p>
 
       {/* Table */}
